@@ -48,7 +48,7 @@ clean:
 # Run local analysis
 run:
 	@echo "Running local analysis"
-	python scripts/run_local.py --analysis-type all
+	python scripts/run_local.py --analysis-type cluster-health
 
 # Deploy to Kubernetes
 deploy:
