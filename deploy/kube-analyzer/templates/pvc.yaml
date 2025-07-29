@@ -1,0 +1,17 @@
+{{- if .Values.reporting.persistentVolume.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "kube-analyzer.fullname" . }}-reports
+  labels:
+    {{- include "kube-analyzer.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.reporting.persistentVolume.storageClass }}
+  storageClassName: {{ .Values.reporting.persistentVolume.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.reporting.persistentVolume.size }}
+{{- end }}

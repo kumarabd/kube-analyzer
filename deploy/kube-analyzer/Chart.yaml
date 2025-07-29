@@ -1,0 +1,24 @@
+apiVersion: v2
+name: kube-analyzer
+description: A Kubernetes Cluster Analyzer AI Agent
+
+# Chart version
+version: 0.1.0
+
+# Application version
+appVersion: "0.1.0"
+
+type: application
+
+keywords:
+  - kubernetes
+  - observability
+  - security
+  - vulnerability
+  - analysis
+
+maintainers:
+  - name: KubeAnalyzer Team
+    email: kubeanalyzer@example.com
+
+home: https://github.com/kumarabd/kube-analyzer

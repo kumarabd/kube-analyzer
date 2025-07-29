@@ -1,0 +1,38 @@
+Thank you for installing {{ .Chart.Name }}.
+
+Your KubeAnalyzer AI agent has been deployed to your Kubernetes cluster!
+
+Application: {{ include "kube-analyzer.fullname" . }}
+Namespace: {{ .Release.Namespace }}
+
+{{- if contains "ClusterIP" .Values.service.type }}
+To access the KubeAnalyzer API within your cluster:
+
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "kube-analyzer.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+  
+Then access the API at http://localhost:{{ .Values.service.port }}
+{{- else if contains "NodePort" .Values.service.type }}
+To access the KubeAnalyzer API:
+  
+  export NODE_PORT=$(kubectl get -n {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "kube-analyzer.fullname" . }})
+  export NODE_IP=$(kubectl get nodes -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.service.type }}
+To access the KubeAnalyzer API:
+  
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        You can watch the status by running 'kubectl get -n {{ .Release.Namespace }} svc --watch {{ include "kube-analyzer.fullname" . }}'
+  
+  export SERVICE_IP=$(kubectl get svc -n {{ .Release.Namespace }} {{ include "kube-analyzer.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo http://$SERVICE_IP:{{ .Values.service.port }}
+{{- end }}
+
+Run a manual analysis:
+  
+  kubectl exec -it -n {{ .Release.Namespace }} deploy/{{ include "kube-analyzer.fullname" . }} -- /app/src/main.py --in-cluster --analysis-type all
+
+View generated reports:
+  
+  kubectl exec -it -n {{ .Release.Namespace }} deploy/{{ include "kube-analyzer.fullname" . }} -- ls -la /app/reports
+
+For more information, check the documentation at: https://github.com/kumarabd/kube-analyzer/tree/main/docs

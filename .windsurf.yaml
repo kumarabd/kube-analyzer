@@ -1,0 +1,160 @@
+# Windsurf Rule File for Kubernetes Cluster Analyzer
+
+version: 1.0
+
+project:
+  name: kube-analyzer
+  description: |
+    A Python application that analyzes Kubernetes clusters for:
+    1. Observability coverage for each service running
+    2. Vulnerabilities in each of the containers running
+    3. Potential issues in the existing cluster
+  language: python
+  framework: kubernetes
+
+requirements:
+  - python>=3.9
+  - kubernetes-client>=24.0.0
+  - prometheus-client>=0.16.0
+  - trivy>=0.40.0  # For vulnerability scanning
+  - pyyaml>=6.0
+  - requests>=2.28.0
+
+structure:
+  - src/:
+      description: Main source code directory
+      contents:
+        - analyzers/:
+            description: Different analysis modules
+            contents:
+              - observability.py:
+                  description: Checks observability coverage for services
+              - vulnerability.py:
+                  description: Scans containers for vulnerabilities
+              - cluster_health.py:
+                  description: Checks for cluster issues and health problems
+        - utils/:
+            description: Utility functions and helpers
+            contents:
+              - k8s_client.py:
+                  description: Kubernetes API client wrapper
+              - prometheus.py:
+                  description: Prometheus metrics interaction
+              - reporting.py:
+                  description: Reporting and output formatting utilities
+        - main.py:
+            description: Application entry point
+  - tests/:
+      description: Test cases
+  - deploy/:
+      description: Helm chart for Kubernetes deployment
+      contents:
+        - kube-analyzer/:
+            description: Helm chart for the application
+            contents:
+              - Chart.yaml:
+                  description: Helm chart metadata
+              - values.yaml:
+                  description: Default configuration values
+              - templates/:
+                  description: Helm templates
+                  contents:
+                    - deployment.yaml:
+                        description: Kubernetes deployment template
+                    - service.yaml:
+                        description: Service definition
+                    - rbac.yaml:
+                        description: RBAC permissions for cluster access
+                    - configmap.yaml:
+                        description: ConfigMap for application configuration
+                    - _helpers.tpl:
+                        description: Template helpers
+  - requirements.txt:
+      description: Python dependencies
+  - Dockerfile:
+      description: Container build spec
+  - README.md:
+      description: Project overview and documentation links
+  - docs/:
+      description: Detailed project documentation
+      contents:
+        - architecture.md:
+            description: Application architecture and design
+        - installation.md:
+            description: Installation and configuration guide
+        - usage.md:
+            description: Usage instructions and examples
+        - ai-agent.md:
+            description: AI Agent capabilities and training details
+        - api.md:
+            description: API documentation
+
+development_steps:
+  - step: 1
+    description: Set up project structure and initialize Python environment
+    tasks:
+      - Create project directory structure
+      - Set up virtual environment
+      - Create requirements.txt
+      - Write basic README.md
+  
+  - step: 2
+    description: Implement Kubernetes client and core utilities
+    tasks:
+      - Create Kubernetes client wrapper for cluster interaction
+      - Implement basic utility functions
+      - Create initial test cases
+  
+  - step: 3
+    description: Implement observability analyzer
+    tasks:
+      - Create module to detect Prometheus metrics endpoints
+      - Implement service discovery mechanism
+      - Add logic to check for logging and tracing
+  
+  - step: 4
+    description: Implement vulnerability scanner
+    tasks:
+      - Integrate with Trivy or similar tool for container scanning
+      - Create reporting mechanism for vulnerability findings
+  
+  - step: 5
+    description: Implement cluster health analyzer
+    tasks:
+      - Check for resource constraints and optimization opportunities
+      - Analyze pod distribution and scheduling issues
+      - Monitor control plane component health
+  
+  - step: 6
+    description: Build reporting and visualization
+    tasks:
+      - Create output formats (JSON, YAML, HTML)
+      - Implement summary reports
+  
+  - step: 7
+    description: Containerize application
+    tasks:
+      - Create Dockerfile
+      - Build and test container
+  
+  - step: 8
+    description: Create Helm chart for deployment
+    tasks:
+      - Create Helm chart structure
+      - Define templates for deployment, service, and RBAC
+      - Create configurable values.yaml
+      - Test helm installation in local cluster
+
+completion_criteria:
+  - Application successfully analyzes all three required dimensions
+  - Code is well-tested with unit and integration tests
+  - Application can be deployed to a Kubernetes cluster
+  - Reports are generated in a clear, actionable format
+  - Documentation is kept up-to-date with all feature changes
+
+documentation_rules:
+  - All feature changes must be reflected in README.md or appropriate files in docs/
+  - Technical specifications should be documented in docs/ folder
+  - User-facing changes must be updated in README.md
+  - API changes must be documented in docs/api.md
+  - AI capabilities changes must be documented in docs/ai-agent.md

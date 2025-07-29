@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kube-analyzer.fullname" . }}
+  labels:
+    {{- include "kube-analyzer.labels" . | nindent 4 }}
+data:
+  analyzer-config.yaml: |
+    # KubeAnalyzer Configuration
+    prometheus:
+      url: {{ .Values.prometheus.url | quote }}
+      insecureSkipVerify: {{ .Values.prometheus.insecureSkipVerify }}
+    
+    analysis:
+      schedule: {{ .Values.analysis.schedule | quote }}
+      type: {{ .Values.analysis.type | quote }}
+      notify: {{ .Values.analysis.notify }}
+      excludeNamespaces:
+      {{- range .Values.analysis.excludeNamespaces }}
+        - {{ . | quote }}
+      {{- end }}
+      
+      analyzers:
+        observability:
+          enabled: {{ .Values.analysis.analyzers.observability.enabled }}
+          minScore: {{ .Values.analysis.analyzers.observability.minScore }}
+        
+        vulnerability:
+          enabled: {{ .Values.analysis.analyzers.vulnerability.enabled }}
+          minSeverity: {{ .Values.analysis.analyzers.vulnerability.minSeverity | quote }}
+        
+        clusterHealth:
+          enabled: {{ .Values.analysis.analyzers.clusterHealth.enabled }}
+    
+    reporting:
+      format: {{ .Values.reporting.format | quote }}
+      retention: {{ .Values.reporting.retention }}

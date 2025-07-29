@@ -1,0 +1,137 @@
+# Default values for kube-analyzer
+# This is a YAML-formatted file.
+
+replicaCount: 1
+
+image:
+  repository: kubeanalyzer/kube-analyzer
+  pullPolicy: IfNotPresent
+  tag: "0.1.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+rbac:
+  # Create RBAC resources
+  create: true
+  # Rules to use for the ClusterRole
+  rules:
+    # Permissions for core resources
+    - apiGroups: [""]
+      resources: ["nodes", "namespaces", "pods", "services", "configmaps", "endpoints", "events"]
+      verbs: ["get", "list", "watch"]
+    # Permissions for apps resources
+    - apiGroups: ["apps"]
+      resources: ["deployments", "daemonsets", "statefulsets", "replicasets"]
+      verbs: ["get", "list", "watch"]
+    # Permissions for batch resources
+    - apiGroups: ["batch"]
+      resources: ["jobs", "cronjobs"]
+      verbs: ["get", "list", "watch"]
+    # Permissions for networking resources
+    - apiGroups: ["networking.k8s.io"]
+      resources: ["networkpolicies", "ingresses"]
+      verbs: ["get", "list", "watch"]
+    # Permissions for storage resources
+    - apiGroups: ["storage.k8s.io"]
+      resources: ["storageclasses", "volumeattachments"]
+      verbs: ["get", "list", "watch"]
+    # Permissions for persistent volumes
+    - apiGroups: [""]
+      resources: ["persistentvolumes", "persistentvolumeclaims"]
+      verbs: ["get", "list", "watch"]
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  fsGroup: 1000
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+
+service:
+  type: ClusterIP
+  port: 8080
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Prometheus configuration for metrics scraping
+prometheus:
+  url: http://prometheus-server.monitoring:9090
+  # Set to true if you want to skip TLS verification
+  insecureSkipVerify: false
+
+# Analysis configuration
+analysis:
+  # How frequently to run the analysis (in hours)
+  schedule: "24"
+  # Type of analysis to run by default (all, observability, vulnerability, cluster-health)
+  type: "all"
+  # Whether to send notifications on findings
+  notify: true
+  # Namespaces to exclude from analysis
+  excludeNamespaces: ["kube-system", "kube-public", "kube-node-lease"]
+  # Configure individual analyzers
+  analyzers:
+    observability:
+      enabled: true
+      # Minimum required score for services (0-100)
+      minScore: 70
+    vulnerability:
+      enabled: true
+      # Minimum severity level to report (CRITICAL, HIGH, MEDIUM, LOW)
+      minSeverity: "HIGH"
+    clusterHealth:
+      enabled: true
+
+# Reporting configuration
+reporting:
+  # Default output format (json, yaml, markdown, html)
+  format: "json"
+  # How many reports to keep
+  retention: 10
+  # Store reports in PV
+  persistentVolume:
+    enabled: true
+    size: 1Gi
+    storageClass: ""
+
+# Configure network policies
+networkPolicy:
+  enabled: true
+  # Allow access to Prometheus
+  allowPrometheusAccess: true
+  # Allow access to Kubernetes API server
+  allowApiServerAccess: true
+  # Additional allowed ingress sources
+  additionalSources: []
