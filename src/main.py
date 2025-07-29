@@ -13,7 +13,7 @@ import logging
 import os
 import sys
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union, Any
 
 from analyzers.cluster_health import ClusterHealthAnalyzer
 from analyzers.observability import ObservabilityAnalyzer
@@ -93,6 +93,26 @@ class KubeAnalyzer:
         # Run cluster health analysis
         logger.info("Running cluster health analysis")
         cluster_health_results = self.cluster_health_analyzer.analyze()
+        logger.info(f"Cluster health results type: {type(cluster_health_results)}")
+        logger.info(f"Cluster health results content: {str(cluster_health_results)[:200]}...")
+        
+        # Ensure we have a dictionary
+        if isinstance(cluster_health_results, str):
+            try:
+                # Try to parse as JSON if it's a string
+                cluster_health_results = json.loads(cluster_health_results)
+                logger.info("Successfully parsed cluster_health_results string as JSON")
+            except json.JSONDecodeError:
+                logger.error("cluster_health_results is a string but not valid JSON")
+                # Wrap in a dict
+                cluster_health_results = {
+                    "summary": cluster_health_results[:200],  # Truncate if too long
+                    "insights": ["Error: Results returned as string"],
+                    "recommendations": [],
+                    "risks": [],
+                    "metrics": {}
+                }
+        
         report.add_section("cluster_health", cluster_health_results)
         
         # Run vulnerability analysis
@@ -223,10 +243,32 @@ class KubeAnalyzer:
         Args:
             report: Report object to display
             output_format: Optional output format override
-        
+            
         Returns:
             String representation of the report
         """
+        # Debug report content
+        logger.info(f"Report data structure: {type(report.data)}")
+        
+        # Check each section for non-dictionary data
+        for section_name, section_data in report.data.get('sections', {}).items():
+            logger.info(f"Section '{section_name}' type: {type(section_data)}")
+            if not isinstance(section_data, dict):
+                logger.error(f"Section '{section_name}' is not a dictionary: {str(section_data)[:100]}...")
+                # Try to convert string to dictionary if possible
+                if isinstance(section_data, str):
+                    try:
+                        fixed_data = json.loads(section_data)
+                        logger.info(f"Successfully converted section '{section_name}' from string to dict")
+                        report.data['sections'][section_name] = fixed_data
+                    except json.JSONDecodeError:
+                        logger.error(f"Could not convert section '{section_name}' from string to dict")
+                        # Create a placeholder dictionary
+                        report.data['sections'][section_name] = {
+                            "error": "Invalid section data",
+                            "original_data": section_data[:200]  # Truncate if too long
+                        }
+        
         format_to_use = output_format or self.output_format
         
         # Get the appropriate string representation based on format
@@ -243,9 +285,132 @@ class KubeAnalyzer:
             return ""
             
         # Print the output to console
-        print(f"\n--- KubeAnalyzer Report ({format_to_use}) ---\n")
+        print(f"\n==================================================\nKubeAnalyzer Report ({format_to_use})\n==================================================\n")
         print(output)
-        print("\n--- End of Report ---\n")
+        print("\n==================================================\n")
+        
+        return output
+        
+    def run_observability_analysis(self, namespaces: Optional[List[str]] = None) -> Report:
+        """
+        Run only observability analysis.
+        
+        Args:
+            namespaces: Optional list of namespaces to analyze
+        
+        Returns:
+            Report object containing observability analysis results
+        """
+        logger.info("Starting observability analysis")
+        
+        # Create a new report
+        report = Report(name="KubeAnalyzer Observability Report")
+        
+        # Determine which namespaces to analyze
+        if not namespaces:
+            namespaces = self.k8s_client.list_namespaces()
+        
+        # Run observability analysis
+        observability_results = self.observability_analyzer.analyze(namespaces)
+        report.add_section("observability", observability_results)
+        
+        return report
+        
+    def run_vulnerability_analysis(self, namespaces: Optional[List[str]] = None) -> Report:
+        """
+        Run only vulnerability analysis.
+        
+        Args:
+            namespaces: Optional list of namespaces to analyze
+        
+        Returns:
+            Report object containing vulnerability analysis results
+        """
+        logger.info("Starting vulnerability analysis")
+        
+        # Create a new report
+        report = Report(name="KubeAnalyzer Vulnerability Report")
+        
+        # Determine which namespaces to analyze
+        if not namespaces:
+            namespaces = self.k8s_client.list_namespaces()
+        
+        # Run vulnerability analysis
+        vulnerability_results = self.vulnerability_analyzer.analyze(namespaces)
+        report.add_section("vulnerability", vulnerability_results)
+        
+        return report
+        
+    def run_cluster_health_analysis(self) -> Report:
+        """
+        Run only cluster health analysis.
+        
+        Returns:
+            Report object containing cluster health analysis results
+        """
+        logger.info("Starting cluster health analysis")
+        
+        # Create a new report
+        report = Report(name="KubeAnalyzer Cluster Health Report")
+        
+        # Run cluster health analysis
+        cluster_health_results = self.cluster_health_analyzer.analyze()
+        report.add_section("cluster_health", cluster_health_results)
+        
+        return report
+
+    def save_report(self, report: Report, output_format: Optional[str] = None) -> str:
+        """
+        Print report output to console instead of saving to file.
+        
+        Args:
+            report: Report object to display
+            output_format: Optional output format override
+            
+        Returns:
+            String representation of the report
+        """
+        # Debug report content
+        logger.info(f"Report data structure: {type(report.data)}")
+        
+        # Check each section for non-dictionary data
+        for section_name, section_data in report.data.get('sections', {}).items():
+            logger.info(f"Section '{section_name}' type: {type(section_data)}")
+            if not isinstance(section_data, dict):
+                logger.error(f"Section '{section_name}' is not a dictionary: {str(section_data)[:100]}...")
+                # Try to convert string to dictionary if possible
+                if isinstance(section_data, str):
+                    try:
+                        fixed_data = json.loads(section_data)
+                        logger.info(f"Successfully converted section '{section_name}' from string to dict")
+                        report.data['sections'][section_name] = fixed_data
+                    except json.JSONDecodeError:
+                        logger.error(f"Could not convert section '{section_name}' from string to dict")
+                        # Create a placeholder dictionary
+                        report.data['sections'][section_name] = {
+                            "error": "Invalid section data",
+                            "original_data": section_data[:200]  # Truncate if too long
+                        }
+        
+        format_to_use = output_format or self.output_format
+        
+        # Get the appropriate string representation based on format
+        if format_to_use.lower() == 'json':
+            output = report.to_json(pretty=True)
+        elif format_to_use.lower() == 'yaml':
+            output = report.to_yaml()
+        elif format_to_use.lower() == 'markdown':
+            output = ReportFormatter.format_markdown(report.get_report())
+        elif format_to_use.lower() == 'html':
+            output = ReportFormatter.format_html(report.get_report())
+        else:
+            logger.error(f"Unsupported output format: {format_to_use}")
+            return ""
+            
+        # Print the output to console
+        print(f"\n==================================================\nKubeAnalyzer Report ({format_to_use})\n==================================================\n")
+        print(output)
+        print("\n==================================================\n")
         
         return output
 

@@ -229,38 +229,70 @@ class ReportFormatter:
             if "findings" in section_data:
                 lines.append("### Findings")
                 for finding in section_data["findings"]:
-                    title = finding.get("title", "Untitled Finding")
-                    severity = finding.get("severity", "info").upper()
-                    description = finding.get("description", "")
-                    
-                    lines.append(f"#### {title} ({severity})")
-                    lines.append(description)
-                    
-                    # Add affected resources if they exist
-                    if "affected_resources" in finding:
+                    # Check if finding is a string instead of a dictionary
+                    if isinstance(finding, str):
+                        # Create a simple dictionary with the string as description
+                        lines.append(f"#### Finding (INFO)")
+                        lines.append(finding)
                         lines.append("")
-                        lines.append("**Affected Resources:**")
-                        for resource in finding["affected_resources"]:
-                            lines.append(f"- {resource}")
+                        continue
+                        
+                    # Normal dictionary processing
+                    try:
+                        title = finding.get("title", "Untitled Finding")
+                        severity = finding.get("severity", "info").upper()
+                        description = finding.get("description", "")
+                        
+                        lines.append(f"#### {title} ({severity})")
+                        lines.append(description)
+                        
+                        # Add affected resources if they exist
+                        if "affected_resources" in finding:
+                            lines.append("")
+                            lines.append("**Affected Resources:**")
+                            for resource in finding["affected_resources"]:
+                                lines.append(f"- {resource}")
+                    except (AttributeError, TypeError) as e:
+                        # Fallback for any other errors
+                        logger.error(f"Error formatting finding: {e}, type: {type(finding)}")
+                        lines.append(f"#### Finding (ERROR)")
+                        lines.append(str(finding))
+                    
                     lines.append("")
             
             # Add recommendations if they exist
             if "recommendations" in section_data:
                 lines.append("### Recommendations")
                 for rec in section_data["recommendations"]:
-                    title = rec.get("title", "Untitled Recommendation")
-                    priority = rec.get("priority", "medium").upper()
-                    description = rec.get("description", "")
-                    
-                    lines.append(f"#### {title} ({priority})")
-                    lines.append(description)
-                    
-                    # Add steps if they exist
-                    if "steps" in rec:
+                    # Check if recommendation is a string instead of a dictionary
+                    if isinstance(rec, str):
+                        # Create a simple entry with the string as description
+                        lines.append(f"#### Recommendation (MEDIUM)")
+                        lines.append(rec)
                         lines.append("")
-                        lines.append("**Steps:**")
-                        for i, step in enumerate(rec["steps"], 1):
-                            lines.append(f"{i}. {step}")
+                        continue
+                    
+                    # Normal dictionary processing
+                    try:
+                        title = rec.get("title", "Untitled Recommendation")
+                        priority = rec.get("priority", "medium").upper()
+                        description = rec.get("description", "")
+                        
+                        lines.append(f"#### {title} ({priority})")
+                        lines.append(description)
+                        
+                        # Add steps if they exist
+                        if "steps" in rec:
+                            lines.append("")
+                            lines.append("**Steps:**")
+                            for i, step in enumerate(rec["steps"], 1):
+                                lines.append(f"{i}. {step}")
+                    except (AttributeError, TypeError) as e:
+                        # Fallback for any other errors
+                        logger.error(f"Error formatting recommendation: {e}, type: {type(rec)}")
+                        lines.append(f"#### Recommendation (ERROR)")
+                        lines.append(str(rec))
+                        
                     lines.append("")
         
         return "\n".join(lines)
